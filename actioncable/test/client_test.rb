@@ -34,21 +34,26 @@ class ClientTest < ActionCable::TestCase
   end
 
   def setup
+    puts "Setting up"
     ActionCable.instance_variable_set(:@server, nil)
     server = ActionCable.server
     server.config.logger = Logger.new(StringIO.new).tap { |l| l.level = Logger::UNKNOWN }
 
     server.config.cable = ActiveSupport::HashWithIndifferentAccess.new(adapter: "async")
     server.config.use_faye = ENV["FAYE"].present?
+    puts "Faye: #{ENV['FAYE'].present?}"
 
     # and now the "real" setup for our test:
     server.config.disable_request_forgery_protection = true
 
-    Thread.new { EventMachine.run } unless EventMachine.reactor_running?
+    unless EventMachine.reactor_running?
+      Thread.new { EventMachine.run }
+    end
     Thread.pass until EventMachine.reactor_running?
 
     # faye-websocket is warning-rich
     @previous_verbose, $VERBOSE = $VERBOSE, nil
+    puts "Set up"
   end
 
   def teardown
@@ -73,6 +78,7 @@ class ClientTest < ActionCable::TestCase
     attr_reader :pings
 
     def initialize(port)
+      puts "Initializing SyncClient"
       @ws = Faye::WebSocket::Client.new("ws://127.0.0.1:#{port}/")
       @messages = Queue.new
       @closed = Concurrent::Event.new
@@ -111,6 +117,7 @@ class ClientTest < ActionCable::TestCase
 
       open.wait(WAIT_WHEN_EXPECTING_EVENT)
       raise error if error
+      puts "Initialized SyncClient"
     end
 
     def read_message
@@ -166,6 +173,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_single_client
+    puts "single_client"
     with_puma_server do |port|
       c = faye_client(port)
       assert_equal({ "type" => "welcome" }, c.read_message)  # pop the first welcome message off the stack
@@ -178,6 +186,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_interacting_clients
+    puts "interacting_clients"
     with_puma_server do |port|
       clients = 10.times.map { faye_client(port) }
 
@@ -201,6 +210,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_many_clients
+    puts "many_clients"
     with_puma_server do |port|
       clients = 100.times.map { faye_client(port) }
 
@@ -217,6 +227,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_disappearing_client
+    puts "disappearing_client"
     with_puma_server do |port|
       c = faye_client(port)
       assert_equal({ "type" => "welcome" }, c.read_message)  # pop the first welcome message off the stack
@@ -236,6 +247,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_unsubscribe_client
+    puts "unsubscribe_client"
     with_puma_server do |port|
       app = ActionCable.server
       identifier = JSON.generate(channel: "ClientTest::EchoChannel")
@@ -260,6 +272,7 @@ class ClientTest < ActionCable::TestCase
   end
 
   def test_server_restart
+    puts "server_restart"
     with_puma_server do |port|
       c = faye_client(port)
       assert_equal({ "type" => "welcome" }, c.read_message)
