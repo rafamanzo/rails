@@ -612,6 +612,7 @@ class ActionControllerBaseRenderTest < ActionController::TestCase
   end
 end
 
+=begin
 class ImplicitRenderTest < ActionController::TestCase
   tests ImplicitRenderTestController
 
@@ -762,6 +763,7 @@ class HeadRenderTest < ActionController::TestCase
   end
 end
 
+
 class HttpCacheForeverTest < ActionController::TestCase
   class HttpCacheForeverController < ActionController::Base
     def cache_me_forever
@@ -807,3 +809,4 @@ class HttpCacheForeverTest < ActionController::TestCase
     assert_response :not_modified
   end
 end
+=end
