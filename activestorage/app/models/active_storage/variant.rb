@@ -110,18 +110,23 @@ class ActiveStorage::Variant
 
 
     def specification
-      @specification ||=
-        if ActiveStorage.web_image_content_types.include?(blob.content_type)
+      @specification ||= begin
+        convert_format = variation.transformations[:convert]
+
+        if !convert_format && ActiveStorage.web_image_content_types.include?(blob.content_type)
           Specification.new \
             filename: blob.filename,
             content_type: blob.content_type,
             format: nil
         else
+          convert_format ||= "png"
+
           Specification.new \
-            filename: ActiveStorage::Filename.new("#{blob.filename.base}.png"),
-            content_type: "image/png",
-            format: "png"
+            filename: ActiveStorage::Filename.new("#{blob.filename.base}.#{convert_format}"),
+            content_type: "image/#{convert_format}",
+            format: convert_format
         end
+      end
     end
 
     delegate :format, to: :specification
